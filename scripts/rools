@@ -54,6 +54,8 @@ def split_cmd(cmd):
 
     return cmd, cmd_arg
 
+
+
 #------------
 # Histograms
 #------------
@@ -98,6 +100,8 @@ def print_hist_all(hist):
                 [ '%.2f' % (val) for (val, err) in values_x]
             t.add_row(row)
 
+        t.align = 'r'
+        print(t)
 
     else:
         labels = []
@@ -118,8 +122,6 @@ def print_hist_all(hist):
                 print('%s%s: %.2f +- %.2f' % (label, ' '*(max_len-len(label)), val, err))
 
 
-    t.align = 'r'
-    print(t)
 
 
 def print_hist(hist, args):
@@ -205,6 +207,12 @@ def print_tree(tree, args):
             print(b.GetName())
 
 
+def print_root_file_content(keys, args):
+    for key in keys:
+        if args.type:
+            print('%s [%s]' % (key.GetName(), key.GetClassName()))
+        else:
+            print(key.GetName())
 
 
 
@@ -226,13 +234,14 @@ def main():
     parser.add_argument('-s', '--selection', default='', help='Apply selection to tree')
 
     parser.add_argument('--scan', help='Scan tree. Similar to TTree::Scan')
-    #parser.add_argument('--sort', help='Sort scan output by this column')
+    parser.add_argument('--sort', help='Sort scan output by this column')
     parser.add_argument('-c', '--count', action='store_true')
 
 
     ## edit options (onyl available if --edit)
     parser.add_argument('--edit', action='store_true', help='Caution! you are modifying the file')
     parser.add_argument('--delete', action='store_true', help='Caution! Delete all objects with this name. ')
+
 
     if len(sys.argv) < 2:
         parser.print_usage()
@@ -323,27 +332,12 @@ def main():
 
 
     keys = fin.GetListOfKeys()
+    keys_names = [ key.GetName() for key in keys ]
 
     # Show file content
     if root_path is None:
-        for key in keys:
-            if args.type:
-                print('%s [%s]' % (key.GetName(), key.GetClassName()))
-            else:
-                print(key.GetName())
-
-
+        print_root_file_content(keys, args)
     else:
-
-        if '/' in root_path:
-            spath = root_path.split('/')
-
-            if spath[0] in [ key.GetName() for key in keys ]:
-                fin.cd(spath[0])
-                root_path = spath[1]
-
-                # recompute keys
-                keys = ROOT.gDirectory.GetListOfKeys()
 
 
         if args.edit:
@@ -366,7 +360,33 @@ def main():
 
                 obj.Write()
 
-        elif root_path in [ key.GetName() for key in keys ]:
+        else:
+
+            # if '/' in root_path:
+
+            #     # root_path, keys, keys_names = split_root_path(root_path, keys, keys_names)
+
+            #     while '/' in root_path:
+            #         spath = root_path.split('/')
+
+            #         if spath[0] in keys_names:
+            #             fin.cd(spath[0])
+            #             root_path = '/'.join(spath[1:])
+
+            #             # recompute keys
+            #             keys = ROOT.gDirectory.GetListOfKeys()
+            #             keys_names = [ key.GetName() for key in keys ]
+
+            # spath = root_path.split('/')
+
+            # if spath[0] in [ key.GetName() for key in keys ]:
+            #     fin.cd(spath[0])
+            #     root_path = spath[1]
+
+            #     # recompute keys
+            #     keys = ROOT.gDirectory.GetListOfKeys()
+
+            #if root_path in [ key.GetName() for key in keys ]:
 
             obj = ROOT.gDirectory.Get(root_path)
 
@@ -388,8 +408,8 @@ def main():
                 obj.Print()
 
 
-        else:
-            print('object %s does not exist' % root_path)
+        # else:
+        #     print('object %s does not exist' % root_path)
 
 
     fin.Close()
